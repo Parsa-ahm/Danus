@@ -1,0 +1,24 @@
+# Core AI libraries
+transformers>=4.39.0
+torch>=2.5.1+cu121
+safetensors>=0.4.0
+
+# Local embedding and vector search
+sentence-transformers>=2.6.1
+chromadb>=0.4.24
+
+# PDF/text parsing
+PyMuPDF>=1.23.21  # aka `fitz`
+
+# API client for optional cloud LLMs
+openai>=1.14.3  # Optional – used only if cloud fallback is configured
+
+# REST API
+flask>=2.2.5
+
+# Testing & Dev
+pytest>=7.4.3
+python-dotenv>=1.0.1
+
+# Fix CUDA wheel source for torch if not default
+--extra-index-url https://download.pytorch.org/whl/cu121
