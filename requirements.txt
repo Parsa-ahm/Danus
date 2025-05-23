@@ -8,3 +8,4 @@ flask>=2.2.5
 openai>=1.14.3
 pytest>=7.4.3
 python-dotenv>=1.0.1
+accelerate>=0.27.2
