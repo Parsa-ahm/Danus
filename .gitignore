@@ -1,0 +1,48 @@
+# 🐍 Python
+__pycache__/
+*.py[cod]
+*.so
+*.pyd
+*.pyo
+*.log
+
+# 📦 Virtual environments
+venv/
+.env/
+.venv/
+
+# 🧪 Testing & build artifacts
+*.pytest_cache/
+*.coverage
+htmlcov/
+coverage.xml
+dist/
+build/
+*.egg-info/
+
+# 💬 Chroma & HuggingFace cache
+chroma/
+*.chroma.db
+*.sqlite
+*.faiss
+.cache/
+*.cache/
+*.tokenizer
+*.model
+
+# 🧠 Danus specific
+models/
+danus_memory/
+backups/
+danus_log.json
+
+# 💻 OS / Editor files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# 🔐 Security (if ever added)
+secrets.json
+*.key
+*.pem
