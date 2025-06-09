@@ -1,5 +1,16 @@
+"""Simple Flask API exposing Danus functions."""
+
+import os
 from flask import Flask, request, jsonify
-from scripts.file_indexer import scan_folder, answer_question_human_like, open_file_in_explorer
+
+# Default to skipping heavy model downloads when running the API directly.
+os.environ.setdefault("DANUS_SKIP_MODEL", "1")
+
+from scripts.file_indexer import (
+    scan_folder,
+    answer_question_human_like,
+    open_file_in_explorer,
+)
 
 app = Flask(__name__)
 
@@ -23,4 +34,3 @@ def open_file():
 
 if __name__ == "__main__":
     app.run(port=5000, debug=True)
-c

@@ -41,6 +41,10 @@ danus_log.json
 Thumbs.db
 .vscode/
 .idea/
+ui/node_modules/
+ui/dist/
+cpp/*.so
+cpp/*.pyd
 
 # 🔐 Security (if ever added)
 secrets.json
