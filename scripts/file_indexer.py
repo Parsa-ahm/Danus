@@ -1,26 +1,32 @@
 import os
 import fitz  # PyMuPDF
 import chromadb
-from sentence_transformers import SentenceTransformer
-from transformers import AutoModelForCausalLM, AutoTokenizer
-import torch
 from chromadb.utils.embedding_functions import SentenceTransformerEmbeddingFunction
 import json
 import shutil
+
+SKIP_MODEL = os.environ.get("DANUS_SKIP_MODEL", "0") == "1"
+if not SKIP_MODEL:
+    from transformers import AutoModelForCausalLM, AutoTokenizer
+    import torch
 
 chroma_client = chromadb.Client()
 embedding_func = SentenceTransformerEmbeddingFunction(model_name="all-MiniLM-L6-v2")
 collection = chroma_client.get_or_create_collection(name="danus_index", embedding_function=embedding_func)
 
-# Load LLM model (DeepSeek)
+# Load LLM model (DeepSeek) unless disabled
 model_name = "deepseek-ai/deepseek-coder-1.3b-base"
-tokenizer = AutoTokenizer.from_pretrained(model_name)
-model = AutoModelForCausalLM.from_pretrained(
-    model_name,
-    device_map="auto",
-    torch_dtype=torch.float16 if torch.cuda.is_available() else torch.float32,
-    use_safetensors=True
-)
+if not SKIP_MODEL:
+    tokenizer = AutoTokenizer.from_pretrained(model_name)
+    model = AutoModelForCausalLM.from_pretrained(
+        model_name,
+        device_map="auto",
+        torch_dtype=torch.float16 if torch.cuda.is_available() else torch.float32,
+        use_safetensors=True,
+    )
+else:
+    tokenizer = None
+    model = None
 
 
 # Supported file readers
@@ -87,9 +93,12 @@ Files:
 {context}
 Reply like a helpful AI. Recommend the most relevant file and summarize it clearly with the exact file path."""
 
-    inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
-    outputs = model.generate(**inputs, max_new_tokens=300)
-    summary = tokenizer.decode(outputs[0], skip_special_tokens=True).strip()
+    if tokenizer is None or model is None:
+        summary = f"Stub answer for: {query}"
+    else:
+        inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
+        outputs = model.generate(**inputs, max_new_tokens=300)
+        summary = tokenizer.decode(outputs[0], skip_special_tokens=True).strip()
 
     return {
         "summary": summary,
@@ -97,17 +106,24 @@ Reply like a helpful AI. Recommend the most relevant file and summarize it clear
     }
 
 # Opens file location in system explorer
-def open_file_in_explorer(path):
-    if os.name == 'nt':  # Windows
+import sys
+
+
+def open_file_in_explorer(path: str) -> None:
+    """Open the given file in the OS's file explorer."""
+    if sys.platform.startswith("win"):
         os.system(f'explorer /select,"{path}"')
-    elif os.name == 'posix':  # macOS or Linux
-        os.system(f'open "{os.path.dirname(path)}"')
+    elif sys.platform.startswith("darwin"):
+        os.system(f'open -R "{path}"')
+    else:
+        os.system(f'xdg-open "{os.path.dirname(path)}"')
+
 
 LOG_PATH = "danus_log.json"
 BACKUP_DIR = "backups"
 
 
-def _append_log(action: str, details: dict):
+def _append_log(action: str, details: dict) -> None:
     """Append an entry to the JSON log used for simple memory."""
     log = []
     if os.path.exists(LOG_PATH):
@@ -147,7 +163,7 @@ def _categorize(text: str) -> str:
     return "others"
 
 
-def organize_folder(path: str):
+def organize_folder(path: str) -> None:
     """Move files into folders based on simple keyword categories."""
     for root, _, files in os.walk(path):
         for name in files:
@@ -161,4 +177,3 @@ def organize_folder(path: str):
             target_path = os.path.join(target_dir, name)
             shutil.move(full_path, target_path)
             _append_log("move", {"src": full_path, "dst": target_path})
-

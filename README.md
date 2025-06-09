@@ -19,10 +19,8 @@
 ```bash
 git clone https://github.com/your-username/danus.git
 cd danus
-python -m venv venv
-venv\Scripts\activate
-pip install -r requirements.txt
-python api.py
+bash setup_env.sh   # creates venv and installs deps
+./start.sh
 ```
 
 ---
@@ -32,11 +30,11 @@ python api.py
 ```bash
 git clone https://github.com/your-username/danus.git
 cd danus
-python3 -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
-python api.py
+./setup_env.sh    # one-time venv setup
+./start.sh
 ```
+
+You can also read the project overview at `website/index.html` for a friendly introduction.
 
 ---
 
@@ -73,7 +71,11 @@ danus/
 ├── api.py                 # Flask REST API
 ├── main.py                # Local testing CLI
 ├── scripts/
-│   └── file_indexer.py    # Core logic: scanning, search, answers, file ops
+│   ├── file_indexer.py    # Core logic: scanning, search, answers, file ops
+│   ├── task_scheduler.py  # Lightweight task runner for deferred jobs
+│   └── live_editor.py     # Diff-based editing helper
+├── ui/                    # React + Tauri desktop frontend
+├── setup_env.sh           # Virtual environment bootstrap
 ├── venv/                  # Local Python environment (gitignored)
 ├── models/                # Downloaded LLMs (safetensors format)
 ├── backups/               # Backups of original files
@@ -107,6 +109,17 @@ danus/
 - 🔜 Undo Log System — Rollback file ops
 - 🔜 Self-Updating Memory — Detect changed/added files
 
+### 🆕 Additional Modules
+
+- `TaskScheduler` — schedule long running or overnight jobs and execute them
+  later.
+- `live_editor` — propose edits to files using diffs so you can accept or reject
+  changes before they are applied.
+- `memory` — lightweight SQLite store for recent conversations.
+- `gpu_ops` — optional CUDA kernels for accelerated math.
+
+To build the CUDA extension, see `cpp/README.md`.
+
 ---
 
 ## 👩‍💻 How to Modify the Code
@@ -117,10 +130,20 @@ All logic lives in `scripts/file_indexer.py`. You can modify:
 - `answer_question_human_like()` → to change how answers are generated
 - `open_file_in_explorer()` → to tweak OS integration
 
-The backend runs independently of the UI. You can connect it to:
+- The backend runs independently of the UI. You can connect it to:
 
 - A Tauri + React GUI
 - A CLI terminal assistant
+
+### Running the Optional UI
+
+```bash
+cd ui
+npm install
+npm run dev
+```
+
+This launches a React interface with theme toggle, model picker and a basic text editor.
 - A chatbot plugin
 
 ---
@@ -148,3 +171,7 @@ git add .
 git commit -m "Initial private upload of Danus"
 git push -u origin main
 ```
+
+---
+
+For a live demo site, open `website/index.html` in your browser.

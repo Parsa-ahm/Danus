@@ -1,4 +1,12 @@
+"""Simple command-line interface for Danus."""
+
 import argparse
+import os
+
+# ensure local modules are discoverable
+os.environ.setdefault("PYTHONPATH", os.getcwd())
+os.environ.setdefault("DANUS_SKIP_MODEL", "1")
+
 from scripts.file_indexer import (
     scan_folder,
     answer_question_human_like,
@@ -8,17 +16,17 @@ from scripts.file_indexer import (
 )
 
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser(description="Danus CLI")
     sub = parser.add_subparsers(dest="cmd")
 
     s = sub.add_parser("scan", help="Index a folder")
     s.add_argument("path")
 
-    a = sub.add_parser("ask", help="Ask a question")
+    a = sub.add_parser("ask", help="Ask a question about indexed files")
     a.add_argument("question")
 
-    o = sub.add_parser("open", help="Open a file location")
+    o = sub.add_parser("open", help="Open a file in your OS explorer")
     o.add_argument("path")
 
     org = sub.add_parser("organize", help="Organize folder by meaning")
@@ -30,8 +38,8 @@ def main():
     args = parser.parse_args()
 
     if args.cmd == "scan":
-        added = scan_folder(args.path)
-        print(f"Indexed {added} files")
+        count = scan_folder(args.path)
+        print(f"Indexed {count} files")
     elif args.cmd == "ask":
         result = answer_question_human_like(args.question)
         print(result["summary"])
