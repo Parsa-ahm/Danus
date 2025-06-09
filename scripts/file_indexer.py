@@ -5,6 +5,8 @@ from sentence_transformers import SentenceTransformer
 from transformers import AutoModelForCausalLM, AutoTokenizer
 import torch
 from chromadb.utils.embedding_functions import SentenceTransformerEmbeddingFunction
+import json
+import shutil
 
 chroma_client = chromadb.Client()
 embedding_func = SentenceTransformerEmbeddingFunction(model_name="all-MiniLM-L6-v2")
@@ -100,3 +102,63 @@ def open_file_in_explorer(path):
         os.system(f'explorer /select,"{path}"')
     elif os.name == 'posix':  # macOS or Linux
         os.system(f'open "{os.path.dirname(path)}"')
+
+LOG_PATH = "danus_log.json"
+BACKUP_DIR = "backups"
+
+
+def _append_log(action: str, details: dict):
+    """Append an entry to the JSON log used for simple memory."""
+    log = []
+    if os.path.exists(LOG_PATH):
+        try:
+            with open(LOG_PATH, "r", encoding="utf-8") as f:
+                log = json.load(f)
+        except Exception:
+            log = []
+    log.append({"action": action, "details": details})
+    with open(LOG_PATH, "w", encoding="utf-8") as f:
+        json.dump(log, f, indent=2)
+
+
+def backup_and_rename(file_path: str) -> str:
+    """Backup the file and rename it with underscores."""
+    os.makedirs(BACKUP_DIR, exist_ok=True)
+    base = os.path.basename(file_path)
+    backup_path = os.path.join(BACKUP_DIR, base)
+    shutil.copy2(file_path, backup_path)
+
+    new_name = base.replace(" ", "_")
+    new_path = os.path.join(os.path.dirname(file_path), new_name)
+    os.rename(file_path, new_path)
+
+    _append_log("backup_rename", {"src": file_path, "backup": backup_path, "new": new_path})
+    return new_path
+
+
+def _categorize(text: str) -> str:
+    text_l = text.lower()
+    if any(k in text_l for k in ["assignment", "homework"]):
+        return "assignments"
+    if any(k in text_l for k in ["contract", "agreement", "terms"]):
+        return "contracts"
+    if any(k in text_l for k in ["personal", "diary", "letter"]):
+        return "personal"
+    return "others"
+
+
+def organize_folder(path: str):
+    """Move files into folders based on simple keyword categories."""
+    for root, _, files in os.walk(path):
+        for name in files:
+            if not name.lower().endswith((".pdf", ".txt")):
+                continue
+            full_path = os.path.join(root, name)
+            text = extract_text(full_path)
+            category = _categorize(text)
+            target_dir = os.path.join(path, category)
+            os.makedirs(target_dir, exist_ok=True)
+            target_path = os.path.join(target_dir, name)
+            shutil.move(full_path, target_path)
+            _append_log("move", {"src": full_path, "dst": target_path})
+
