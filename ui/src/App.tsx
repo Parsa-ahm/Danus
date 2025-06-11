@@ -11,7 +11,25 @@ export default function App() {
   const [dark, setDark] = useState(true);
   const [model, setModel] = useState(MODELS[0].id);
   const [apiKey, setApiKey] = useState('');
+  const [question, setQuestion] = useState('');
+  const [answer, setAnswer] = useState('');
+
   const toggleTheme = () => setDark(!dark);
+
+  const askBackend = async () => {
+    try {
+      const resp = await fetch('http://localhost:5000/ask', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question })
+      });
+      const data = await resp.json();
+      setAnswer(data.summary || '');
+    } catch (err) {
+      console.error(err);
+      setAnswer('Error contacting API');
+    }
+  };
 
   return (
     <div className={dark ? 'dark h-full' : 'h-full'}>
@@ -49,14 +67,28 @@ export default function App() {
 
         <main className="flex flex-1 overflow-hidden">
           <aside className="w-1/3 p-4 border-r border-gray-300 dark:border-gray-700 overflow-y-auto">
-            {/* Chat messages would appear here */}
-            <p className="text-gray-500">Chat coming soon…</p>
+            {answer ? (
+              <div>
+                <h2 className="font-semibold mb-2">Answer</h2>
+                <p>{answer}</p>
+              </div>
+            ) : (
+              <p className="text-gray-500">Ask a question to see a reply.</p>
+            )}
           </aside>
-          <section className="flex-1 p-4 overflow-y-auto">
+          <section className="flex-1 p-4 overflow-y-auto flex flex-col">
             <textarea
-              className="w-full h-full border rounded p-2 dark:bg-gray-800 dark:text-white"
-              placeholder="Type here… AI suggestions will appear as you type"
+              value={question}
+              onChange={e => setQuestion(e.target.value)}
+              className="flex-1 border rounded p-2 dark:bg-gray-800 dark:text-white"
+              placeholder="Type your question here..."
             />
+            <button
+              onClick={askBackend}
+              className="mt-2 self-start px-3 py-1 border rounded text-sm dark:border-gray-600"
+            >
+              Ask
+            </button>
           </section>
         </main>
       </div>

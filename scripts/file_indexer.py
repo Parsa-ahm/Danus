@@ -1,7 +1,7 @@
 import os
 import fitz  # PyMuPDF
 import chromadb
-from chromadb.utils.embedding_functions import SentenceTransformerEmbeddingFunction
+from chromadb.utils import embedding_functions
 
 SKIP_MODEL = os.environ.get("DANUS_SKIP_MODEL", "0") == "1"
 if not SKIP_MODEL:
@@ -9,7 +9,11 @@ if not SKIP_MODEL:
     import torch
 
 chroma_client = chromadb.Client()
-embedding_func = SentenceTransformerEmbeddingFunction(model_name="all-MiniLM-L6-v2")
+if SKIP_MODEL:
+    embedding_func = embedding_functions.DefaultEmbeddingFunction()
+else:
+    from chromadb.utils.embedding_functions import SentenceTransformerEmbeddingFunction
+    embedding_func = SentenceTransformerEmbeddingFunction(model_name="all-MiniLM-L6-v2")
 collection = chroma_client.get_or_create_collection(name="danus_index", embedding_function=embedding_func)
 
 # Load LLM model (DeepSeek) unless disabled
