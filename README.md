@@ -36,6 +36,18 @@ cd danus
 
 You can also read the project overview at `website/index.html` for a friendly introduction.
 
+### Launch the Web UI
+
+Run the API using `./start.sh` in one terminal. In another terminal start the React app:
+
+```bash
+cd ui
+npm install
+npm run dev
+```
+
+Open `http://localhost:5173` and the interface will talk to the API on `http://localhost:5000`.
+
 ---
 
 ### 🧪 Test the API
@@ -144,7 +156,6 @@ npm run dev
 ```
 
 This launches a React interface with theme toggle, model picker and a basic text editor.
-- A chatbot plugin
 
 ---
 

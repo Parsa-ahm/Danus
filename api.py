@@ -2,6 +2,7 @@
 
 import os
 from flask import Flask, request, jsonify
+from flask_cors import CORS
 
 # Default to skipping heavy model downloads when running the API directly.
 os.environ.setdefault("DANUS_SKIP_MODEL", "1")
@@ -13,6 +14,7 @@ from scripts.file_indexer import (
 )
 
 app = Flask(__name__)
+CORS(app)
 
 @app.route("/scan", methods=["POST"])
 def scan():
