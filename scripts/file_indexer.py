@@ -4,6 +4,7 @@ import chromadb
 from chromadb.utils.embedding_functions import SentenceTransformerEmbeddingFunction
 import json
 import shutil
+import sys
 
 SKIP_MODEL = os.environ.get("DANUS_SKIP_MODEL", "0") == "1"
 if not SKIP_MODEL:
@@ -106,8 +107,6 @@ Reply like a helpful AI. Recommend the most relevant file and summarize it clear
     }
 
 # Opens file location in system explorer
-import sys
-
 
 def open_file_in_explorer(path: str) -> None:
     """Open the given file in the OS's file explorer."""
@@ -122,7 +121,6 @@ def open_file_in_explorer(path: str) -> None:
 LOG_PATH = "danus_log.json"
 BACKUP_DIR = "backups"
 
-
 def _append_log(action: str, details: dict) -> None:
     """Append an entry to the JSON log used for simple memory."""
     log = []
@@ -135,7 +133,6 @@ def _append_log(action: str, details: dict) -> None:
     log.append({"action": action, "details": details})
     with open(LOG_PATH, "w", encoding="utf-8") as f:
         json.dump(log, f, indent=2)
-
 
 def backup_and_rename(file_path: str) -> str:
     """Backup the file and rename it with underscores."""
@@ -151,7 +148,6 @@ def backup_and_rename(file_path: str) -> str:
     _append_log("backup_rename", {"src": file_path, "backup": backup_path, "new": new_path})
     return new_path
 
-
 def _categorize(text: str) -> str:
     text_l = text.lower()
     if any(k in text_l for k in ["assignment", "homework"]):
@@ -161,7 +157,6 @@ def _categorize(text: str) -> str:
     if any(k in text_l for k in ["personal", "diary", "letter"]):
         return "personal"
     return "others"
-
 
 def organize_folder(path: str) -> None:
     """Move files into folders based on simple keyword categories."""
@@ -177,3 +172,4 @@ def organize_folder(path: str) -> None:
             target_path = os.path.join(target_dir, name)
             shutil.move(full_path, target_path)
             _append_log("move", {"src": full_path, "dst": target_path})
+
