@@ -1,24 +1,33 @@
 import os
 import fitz  # PyMuPDF
 import chromadb
-from sentence_transformers import SentenceTransformer
-from transformers import AutoModelForCausalLM, AutoTokenizer
-import torch
 from chromadb.utils.embedding_functions import SentenceTransformerEmbeddingFunction
+import json
+import shutil
+import sys
+
+SKIP_MODEL = os.environ.get("DANUS_SKIP_MODEL", "0") == "1"
+if not SKIP_MODEL:
+    from transformers import AutoModelForCausalLM, AutoTokenizer
+    import torch
 
 chroma_client = chromadb.Client()
 embedding_func = SentenceTransformerEmbeddingFunction(model_name="all-MiniLM-L6-v2")
 collection = chroma_client.get_or_create_collection(name="danus_index", embedding_function=embedding_func)
 
-# Load LLM model (DeepSeek)
+# Load LLM model (DeepSeek) unless disabled
 model_name = "deepseek-ai/deepseek-coder-1.3b-base"
-tokenizer = AutoTokenizer.from_pretrained(model_name)
-model = AutoModelForCausalLM.from_pretrained(
-    model_name,
-    device_map="auto",
-    torch_dtype=torch.float16 if torch.cuda.is_available() else torch.float32,
-    use_safetensors=True
-)
+if not SKIP_MODEL:
+    tokenizer = AutoTokenizer.from_pretrained(model_name)
+    model = AutoModelForCausalLM.from_pretrained(
+        model_name,
+        device_map="auto",
+        torch_dtype=torch.float16 if torch.cuda.is_available() else torch.float32,
+        use_safetensors=True,
+    )
+else:
+    tokenizer = None
+    model = None
 
 
 # Supported file readers
@@ -85,9 +94,12 @@ Files:
 {context}
 Reply like a helpful AI. Recommend the most relevant file and summarize it clearly with the exact file path."""
 
-    inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
-    outputs = model.generate(**inputs, max_new_tokens=300)
-    summary = tokenizer.decode(outputs[0], skip_special_tokens=True).strip()
+    if tokenizer is None or model is None:
+        summary = f"Stub answer for: {query}"
+    else:
+        inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
+        outputs = model.generate(**inputs, max_new_tokens=300)
+        summary = tokenizer.decode(outputs[0], skip_special_tokens=True).strip()
 
     return {
         "summary": summary,
@@ -95,8 +107,69 @@ Reply like a helpful AI. Recommend the most relevant file and summarize it clear
     }
 
 # Opens file location in system explorer
-def open_file_in_explorer(path):
-    if os.name == 'nt':  # Windows
+
+def open_file_in_explorer(path: str) -> None:
+    """Open the given file in the OS's file explorer."""
+    if sys.platform.startswith("win"):
         os.system(f'explorer /select,"{path}"')
-    elif os.name == 'posix':  # macOS or Linux
-        os.system(f'open "{os.path.dirname(path)}"')
+    elif sys.platform.startswith("darwin"):
+        os.system(f'open -R "{path}"')
+    else:
+        os.system(f'xdg-open "{os.path.dirname(path)}"')
+
+
+LOG_PATH = "danus_log.json"
+BACKUP_DIR = "backups"
+
+def _append_log(action: str, details: dict) -> None:
+    """Append an entry to the JSON log used for simple memory."""
+    log = []
+    if os.path.exists(LOG_PATH):
+        try:
+            with open(LOG_PATH, "r", encoding="utf-8") as f:
+                log = json.load(f)
+        except Exception:
+            log = []
+    log.append({"action": action, "details": details})
+    with open(LOG_PATH, "w", encoding="utf-8") as f:
+        json.dump(log, f, indent=2)
+
+def backup_and_rename(file_path: str) -> str:
+    """Backup the file and rename it with underscores."""
+    os.makedirs(BACKUP_DIR, exist_ok=True)
+    base = os.path.basename(file_path)
+    backup_path = os.path.join(BACKUP_DIR, base)
+    shutil.copy2(file_path, backup_path)
+
+    new_name = base.replace(" ", "_")
+    new_path = os.path.join(os.path.dirname(file_path), new_name)
+    os.rename(file_path, new_path)
+
+    _append_log("backup_rename", {"src": file_path, "backup": backup_path, "new": new_path})
+    return new_path
+
+def _categorize(text: str) -> str:
+    text_l = text.lower()
+    if any(k in text_l for k in ["assignment", "homework"]):
+        return "assignments"
+    if any(k in text_l for k in ["contract", "agreement", "terms"]):
+        return "contracts"
+    if any(k in text_l for k in ["personal", "diary", "letter"]):
+        return "personal"
+    return "others"
+
+def organize_folder(path: str) -> None:
+    """Move files into folders based on simple keyword categories."""
+    for root, _, files in os.walk(path):
+        for name in files:
+            if not name.lower().endswith((".pdf", ".txt")):
+                continue
+            full_path = os.path.join(root, name)
+            text = extract_text(full_path)
+            category = _categorize(text)
+            target_dir = os.path.join(path, category)
+            os.makedirs(target_dir, exist_ok=True)
+            target_path = os.path.join(target_dir, name)
+            shutil.move(full_path, target_path)
+            _append_log("move", {"src": full_path, "dst": target_path})
+

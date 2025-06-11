@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Danus UI</title>
+</head>
+<body>
+<h1>Danus Assistant</h1>
+<div>
+    <input id="scan-path" placeholder="Folder path" />
+    <button onclick="scan()">Scan</button>
+</div>
+<div>
+    <input id="question" placeholder="Ask a question" />
+    <button onclick="ask()">Ask</button>
+</div>
+<pre id="output"></pre>
+<script>
+function scan(){
+    const path = document.getElementById('scan-path').value;
+    fetch('/scan',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({path})
+    }).then(r=>r.json()).then(d=>{
+        document.getElementById('output').textContent=JSON.stringify(d,null,2);
+    });
+}
+function ask(){
+    const question = document.getElementById('question').value;
+    fetch('/ask',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({question})
+    }).then(r=>r.json()).then(d=>{
+        document.getElementById('output').textContent=JSON.stringify(d,null,2);
+    });
+}
+</script>
+</body>
+</html>
