@@ -18,22 +18,22 @@ from scripts.file_indexer import (
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Danus CLI")
-    sub = parser.add_subparsers(dest="cmd")
+    sub = parser.add_subparsers(dest="cmd", required=True)
 
-    s = sub.add_parser("scan", help="Index a folder")
-    s.add_argument("path")
+    scan_p = sub.add_parser("scan", help="Index a folder")
+    scan_p.add_argument("path")
 
-    a = sub.add_parser("ask", help="Ask a question about indexed files")
-    a.add_argument("question")
+    ask_p = sub.add_parser("ask", help="Ask a question about indexed files")
+    ask_p.add_argument("question")
 
-    o = sub.add_parser("open", help="Open a file in your OS explorer")
-    o.add_argument("path")
+    open_p = sub.add_parser("open", help="Open a file in your OS explorer")
+    open_p.add_argument("path")
 
-    org = sub.add_parser("organize", help="Organize folder by meaning")
-    org.add_argument("path")
+    org_p = sub.add_parser("organize", help="Organize folder by meaning")
+    org_p.add_argument("path")
 
-    b = sub.add_parser("backup", help="Backup and rename a file")
-    b.add_argument("file")
+    backup_p = sub.add_parser("backup", help="Backup and rename a file")
+    backup_p.add_argument("file")
 
     args = parser.parse_args()
 
