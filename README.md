@@ -168,21 +168,4 @@ Danus:
 - Can use fully offline LLMs (no Hugging Face APIs required)
 - Encrypts or prunes memory on schedule (coming soon)
 
----
 
-## 📦 Setup for Private Repo
-
-1. Create repo on GitHub (`danus`)
-2. Set as private
-3. Push your code:
-
-```bash
-git remote add origin https://github.com/your-username/danus.git
-git add .
-git commit -m "Initial private upload of Danus"
-git push -u origin main
-```
-
----
-
-For a live demo site, open `website/index.html` in your browser.
