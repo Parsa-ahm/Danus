@@ -1,15 +1,22 @@
 #!/usr/bin/env bash
-# Simple startup helper for the Danus API
-# Activates the virtual environment if present and launches the Flask server.
+# Danus API startup script (cross-platform)
 
-# Activate venv if it exists
+# Detect platform and activate venv
 if [ -d "venv" ]; then
-  # shellcheck disable=SC1091
-  source "venv/bin/activate"
+  if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "win32" ]]; then
+    # Git Bash / MinGW / Windows
+    source "venv/Scripts/activate"
+  else
+    # macOS/Linux
+    source "venv/bin/activate"
+  fi
+else
+  echo "⚠️  No venv/ directory found — continuing without virtual environment."
 fi
 
-# Recommended environment variables
+# Environment variables
 export PYTHONPATH="$(pwd)"
-export DANUS_SKIP_MODEL=${DANUS_SKIP_MODEL:-1}
+export DANUS_SKIP_MODEL="${DANUS_SKIP_MODEL:-1}"
 
+# Launch API
 python api.py
